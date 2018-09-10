@@ -1,0 +1,26 @@
+﻿Ctrl + Tab : Switch between source and header files.
+Ctrl + Shift + T : Open Element
+Ctrl + Shift + R : Open File/Resource.
+Ctrl + Space - Show proposals to complete you've written.
+Ctrl + Alt + H - Opens the call hierarchy for a function
+Ctrl + i - Corrects indentation of the selected text - very useful in my opinion
+Ctrl + h - Opens a search dialog; the "C/C++ Search" tab searches through indexed locations
+Ctrl + O - Opens a member browser of the current class, enabling to fastly open a method
+Ctrl + Shift + G - When a function, object or var is selected : find all occurences of it in the project.
+Alt + ←/→ - Go to previous / go to next edited or viewed place.
+Ctrl + m - Maximize or un-maximize current Editor Window (also works for other Windows
+Ctrl + Shift + Up/Down Arrow - Jump to previous / jump to next method
+Ctrl + q - Jump to last location edited
+Ctrl + Shift + p - With a bracket selected: jump to the matching closing or opening bracket
+Alt + Shift + R , N : Rename a function or variable throughout a project.
+Alt+← / → - move to the previous/next location you edited; for example, if you browse through a few function declarations, and then want to go back to where you started from, press Alt+← to move to the previous locations
+Ctrl+Page Up: Go to the next source-file opened as a tab
+Ctrl+Page Down: Go to the previous file
+Ctrl+k : To search forward for a highlighted text in a file.
+
+
+gcc bindTest.cpp -std=c++11 -o bindTest -lstdc++ && ./bindTest
+
+gcc -E prep.cpp 
+
+
