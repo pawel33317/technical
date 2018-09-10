@@ -1,0 +1,746 @@
+﻿##########Podstawowe założenia gita#########
+	!Git przechowuje dane jako migawki. Tworzy obraz przedstawiający jak w danym momencie wyglądają wszystkie pliki.
+!Dla każdego obiektu Git wyliczana jest suma kontrolna przed jego zapisem i na podstawie tej sumy można od tej pory odwoływać się do danego obiektu. Oznacza to, że nie ma możliwości zmiany zawartości żadnego pliku, czy katalogu bez reakcji ze strony Git. W rzeczywistości Git przechowuje wszystko nie pod postacią plików i ich nazw, ale we własnej bazie danych, w której kluczami są skróty SHA-1, a wartościami - zawartości plików, czy struktur katalogów.
+!Git posiada trzy stany, w których mogą znajdować się pliki: zatwierdzony, zmodyfikowany i śledzony. Katalog Git jest miejscem, w którym Git przechowuje własne metadane oraz obiektową bazę danych Twojego projektu. Katalog roboczy stanowi obraz jednej wersji projektu. Zawartość tego katalogu pobierana jest ze skompresowanej bazy danych zawartej w katalogu Git i umieszczana na dysku w miejscu, w którym można ją odczytać lub zmodyfikować.
+!Przechowalnia to prosty plik, zwykle przechowywany w katalogu Git, który zawiera informacje o tym, czego dotyczyć będzie następna operacja commit.
+	!Podstawowy sposób pracy z Git wygląda mniej więcej tak:
+1 Dokonujesz modyfikacji plików w katalogu roboczym.
+2 Oznaczasz zmodyfikowane pliki jako śledzone, dodając ich bieżący stan (migawkę) do przechowalni.
+3 Dokonujesz zatwierdzenia (commit), podczas którego zawartość plików z przechowalni zapisywana jest jako migawka projektu w katalogu Git.
+	!Stany
+zatwierdzony ZACOMMITOWANY Committed
+zmodyfikowany  Modified (nie dodany)
+śledzony Staged (czeka na commit)
+
+#########GIT SETUP#########
+	git config --list | git config --list --show-origin  ==> Gdzie jest plik gitconfig i jakie zmienne zawiera
+git config --global user.name "Pawel Czubak" | git config --global user.email "pawel33317@gmail.com" | git config --global core.editor emacs ==> z --global robi to globalnie dla konkretnego projektu możne tej opcji nie użyć
+	TEMPLATKA COMMITA
+vi ~/gitmessage.txt
+git config --global commit.template $HOME/gitmessage.txt
+	git config --global core.pager '' ==> domyslnie "less" ==> program do wyświetlania log i diff może być "more" i inne
+	git config --global user.signingkey <gpg-key-id> ==> klucz do etykiet
+			==> git tag -s <tag-name>
+git config core.excludesfile ==> podobnie jak plik .gitignore
+git config --global color.ui true ==> git tyswietla kolorowe wyniki
+git config --global color.diff.meta "blue black bold" ==> kolory dla diff można stosować dla wszystkiego
+git config --global core.autocrlf true ==> zmiania powrót karetki na znak nowej lini przy pobierania kodu
+git config --global core.autocrlf input ==> konwertuje znaki podczas COMMITA
+	USTAWIENIA PO STRONIE SERWERA
+git config --system receive.fsckObjects true ==> SPRAWDZA SPÓJNOŚĆ DANYCH PO pushu
+git config --system receive.denyNonFastForwards true ==> blokuje ponowne wrzucenie commita np po rebase czy po --amend
+						==>czyli blokuje opcje -f
+git config --system receive.denyDeletes true ==> blokuje usunięcie zdalnego brancha
+	Dane w katalogu .git --> posiadając go można wszystko odtworzyć
+Katalog objects przechowuje całą zawartość bazy danych, katalog refs przechowuje wskaźniki do obiektów commitów w danych (branches), plik HEAD wskazuje gałąź na której się znajdujesz, a plik index jest miejscem w którym przechowywane są informacje na temat przechowalni.
+#########Github init repo#########
+	mkdir learnGit -> cd learnGit -> vi READ.me -> git init -> git status -> git add READ.me ==> rozpoczyna śledzenie nowego pliku, dodaje do poczekalni
+git commit ==> z poczekalni na commited
+git remote add origin git@github.com:pawel33317/learnGit.git || git remote remove origin
+cd ~/.ssh && ssh-keygen -> cat id_rsa.pub -> git push -u origin master
+git config --global core.whitespace trailing-space,space-before-tab,indent-with-non-tab ==> naprawa spacji
+
+#########Github clone repo#########
+	!Po wykonaniu polecenia git clone zostanie pobrana każda rewizja, każdego pliku w historii projektu.
+git clone git://github.com/pawel33317/learnGit
+
+
+##########Zarządzenie plikami##########
+	git rm || git add || git add -u
+git rf -f 					==> jeżeli zmodyfikowalem i dodalem do indexu
+git rm --cached readme.txt 	==> usuniecie z poczekalni
+git mv 					 	==> robi rm i add
+
+
+##########Commitowanie##########
+	git commit 	==> [master 4b42198] v0.02v0.02  ==>suma kontrolna zmian
+git commit -a 	==> dodaje wszystkie śledzone pliki -- pomienięcie add
+git commit -v 	==> w komentarzu commmita będą też zmodyfikowane wiersze
+
+
+##########DIFF##########
+	git diff 							==> zmiany między ZMODYFIKOWANYM a ŚLEDZONYM(STAGED)
+git diff --staged == git diff --cached 	==> zmiany między ZACOMMITOWANY a ŚLEDZONYM(STAGED)
+git diff 747d6fc 57a6ff0 				==> diff pomiędzy wersjami zmian
+git diff --check ==> pokazuje nadmiarowe spacje !!!IMPORTANT!!!
+git diff master ==> różnice z master
+git merge-base branch branch2 ==> lub zamiast branchy gałęzie ==> znajduje najlepszego wspólnego przodka
+git diff 36c7db ==> różnice do jakiejś migawki np wspólnego przodka
+git diff master...contrib ==> różnice między master a wspólny przodek z contrib
+git diff --stat --cached [remote/branch] ==> sprawdzenie czy mamy coś do pusha
+
+
+##########LOGS##########
+	git log -liczba 		==> n ostatnich commitów
+	git log -p 				==> pokazuje modyfikacje plików przez commit
+git log --stat 				==> statystyki zmian
+git log --no-merges
+git log --pretty=oneline 	==> commit i hash
+git log --pretty=format:"%h - %an, %ar : %s"
+git log --pretty=format:"%h %s" --graph ==> graficznie pokazuje zmiany
+git log --pretty="%h - %s" --author=gitster --since="2008-10-01" --before="2008-11-01" --no-merges -- t/ ==> grepy i inne
+	git log -- [TAB] ==> podpowiedzi
+git shortlog ==> lista userów i ich commitów
+git shortlog --no-merges master --not v1.0.1 ==> zmiany od v1.0.1
+	git show 1c002dd4b536e7479fe34593e72e6c6c1819e53b ==> pokazuje zmiane wystarczy 1c00
+git log --abbrev-commit --pretty=oneline ==> lista ostatnich commitów ze skróconym hashem
+git rev-parse topic1 ==> pokazuje commit na który wskazuje gałąź
+	git reflog 	==> pokazuje odwołania HEADA czyli na jakiej gałęzi byliśmy co robiliśmy... ==> tymczasowa historia
+							==> dostępny tylko lokalnie !!!
+git show HEAD ==> pokazuje ostatnią zmianę
+git show HEAD@{5} ==> pokazuję piątą zmianę od teraz
+git show master@{yesterday}
+	git show HEAD^ ==> pokazuje rodzica zmiany czyli poprzednią zmianę
+git show HEAD^2 ==> drugi rodzic JEZELI BYL
+git show HEAD~2 ==> rodzic rodzica ==> nie mój drugi rodzic ==> == HEAD^^
+git show d921970^ || HEAD~3^2
+git show d921970^2
+	git log master..experiment ==> pokaż wszystkie zmiany które są na experimental ale nie ma na master
+  git log origin/master..HEAD ==> pokaż wszystkie zmiany które są na aktualnym branchu ale nie ma na ZDALNYM MASTER
+															==> pokaże to co chcesz wypchnąć pushem
+git log refA refB ^refC ==> sprawdza które zmiany są w refA i refB ale nie ma ich w refC
+git log refA refB --not refC
+git log master...experiment ==> zmiany które są w master lub experimental ale nie ma ich w obu
+	git blame -L 12,22 simplegit.rb ==> pokazuje linie w pliku i kto jako ostatni ją edytował
+git blame -C -L 141,153 GITPackUpload.m ==> dodatkowo pokazuje z jakiego pliku została przeniesiona dana linia jeżeli była przeniesiona
+
+
+##########BISECT ANALIZA W KTÓRYM COMMICIE POWSTAŁ BŁĄD##########
+Jesteśmy na branchu i commicie xxx okazuje się że kod działa źle, ostatnio działałdobrze 10 wersji temu i nie wiadomo który commit zjebał
+git bisect start ==> rozpoczynamy
+git bisect bad ==> informujemy że aktualny commit zawiera błąd
+git bisect good ccccc ==> informujemy że commit/wersja ccccc była ok
+	git znajduje 10 wersji które byłe pośrednie i przechodzi na środkową czyli piątą
+			Bisecting: 5 revisions left to test after this
+			[ecb6e1bc347ccecc5f9350d878ce677feb13d3b2] error handling on repo
+testujemy czy działa
+jak działa to wpisujemy poniższe i przełącza nas na środkowy commit czyli trzeci jak nie działa przerzuca nas na 8 commit
+	git bisect good | git bisect bad
+			Bisecting: 3 revisions left to test after this
+i tak do końca aż znajdziemy pierwszy który zepisuł
+jak git już wie w którym był błąd wyświetla:
+			b047b02ea83310a70fd603dc8cd7a6cd13d15c04 is first bad commit
+			commit b047b02ea83310a70fd603dc8cd7a6cd13d15c04
+			Author: PJ Hyett <pjhyett@example.com>
+			Date:   Tue Jan 27 14:48:32 2009 -0800...
+po skończonej analizie:
+	git bisect reset
+##########
+bisect można zautomatyzować:
+	git bisect start HEAD v1.0
+	git bisect run test-error.sh ==> skrypt testujący i zwracający 0 jak ok --> można zrobić też np make test
+
+
+##########GIT REMOTE##########
+	git remote show || git remote show origin
+git ls-remote ==> sha of the latest commit
+git branch -r ==> pokazuje zdalne branche
+git branch -a ==> pokazuje lokalne
+	git remote -v ==> pokazuje aliasy branchy i na co wskazują !!!IMPORTANT!!!
+git remote rename pb paul
+git remote add [skrót] [url]
+
+
+##########AKTUALIZACJA BRANCHA##########
+	git fetch [nazwa-zdalengo-repozytorium] ==> Polecenie to sięga do zdalnego projektu i pobiera z niego wszystkie dane, których jeszcze nie masz, nie scala zmian
+git pull == git fetch + git merge
+	!Domyślnie, polecenie git clone ustawia twoją lokalną gałąź główną master tak aby śledziła zmiany w zdalnej gałęzi master na serwerze z którego sklonowałeś repozytorium
+!Uruchomienie git pull, ogólnie mówiąc, pobiera dane z serwera na bazie którego oryginalnie stworzyłeś swoje repozytorium i próbuje automatycznie scalić zmiany z kodem roboczym nad którym aktualnie, lokalnie pracujesz.
+
+
+##########WYPYCHANIE ZMIAN##########
+git push [nazwa-zdalnego-repo] [nazwa-gałęzi] ==> wypychanie zmian
+git push origin featureB:featureBee ==> wrzuć zmiany z mojego brancha featureB do brancha zdalnego featureBee na zdalnym repo origin ==> jest to refspec
+git request-pull ||  git request-pull origin/master myfork ==> generuje podsumowanie zmian można go przesłać reviewerowi
+git push -f myfork featureA ==> nadpisanie wcześniej wrzuconej gałęzi featureA
+git format-patch -M origin/branch2 ==> tworzy patchE (z wszystkimi zmianami dla danych commitów) oraz zawiera w nich informacje o commicie, patche te można przesłać do review, ręcznie zmodyfikować lub ktoś inny może je nałożyć
+	teraz commit można przesłać mailowo komendą git send-email *.patchjednak w ~/.gitconfig imap musi być skonfigurowany
+
+
+##########WGRYWANIE PATCHY##########
+git apply /tmp/patch-ruby-client.patch 	==> na branchu na którym chcemy wgrać zmiany może być to nowy branch
+																				==> patch ma być wygenerowany git diff lub diff unixowy
+																				==> prawie jak patch -p1 ale dodatkowo obsługuje usuwania plików itp
+git apply --check					==> sprawdzenie czy łata się nałoży
+git am 0001-limit-log-function.patch		==> taj jak apply tylko że dla patchy nałożonych komendą format-patch
+git am --resolved					==> jak się nie nałoży i trzeba będzie ręcznie coś zmieniać analogicznie jak np REBASE
+git am -3 0001-seeing-if-this-helps-the-gem.patch ==> -3 umożliwia gitowi rozwiązywanie cięższych mergy ale czasami nie działa
+
+
+##########COFANIE ZMIAN##########
+	git commit --amend ==> naspisanie poprzedniego commita
+git reset HEAD plik2 ==> cofnięcie git add dla pliku !!!IMPORTANT!!!
+git checkout plik ==> cofnięcie zmian w śledzonym pliku !!!IMPORTANT!!!
+
+
+##########UTRACENIE COMMITA PO AMENDZIE - PRZYWRACANIE##########
+	git commit
+git push https://github.com/pawel33317/learnGit.git master
+git commit --amend
+git pull ==> CONFLICT (content): Merge conflict in READ.me  ==> czasami tu nie występuje konflikt...
+vi READ.me
+git add READ.me ==> pawel@DESKTOP-5496O5K MINGW64 ~/repo/learnGit (master|MERGING)
+git commit
+git push https://github.com/pawel33317/learnGit.git master
+	UTRACILISMY TU ZMIANY Z COMMITA PRZEZ AMMENDA -> PRZYWRACANIE !!!IMPORTANT!!!
+git reflog !!!IMPORTANT!!!
+1d6b38f (HEAD -> master) HEAD@{0}: commit (merge): Merge branch 'master' of git://github.com/pawel33317/learnGit
+57a6ff0 HEAD@{1}: commit (amend): aded line 2 and line 3 xx  ######zmiany ammenda
+747d6fc (origin/master, origin/HEAD) HEAD@{2}: commit: dded line 2 and line 3   ######zmiany przed ammendem
+git checkout 747d6fc
+
+
+##########TAGOWANIE##########
+	git tag || git tag -l 'v1.4.2.*' -> szuka regex
+!tagi lekkie zachowują się mniej więcej tak jak gałąź, która się nie zmienia - jest to tylko wskaźnik do konkretnej rewizji
+!tagi opisane są przechowywane jako pełne obiekty w bazie danych Gita. Są one opatrywane sumą kontrolną, zawierają nazwisko osoby etykietującej, jej adres e-mail oraz datę; ponadto, posiadają notkę etykiety,
+	git tag -a v1.4 -m 'my version 1.4' ==> tworzenie taga opisanego ==> -s zamiast -a podpisanie swoim kluczem GPG
+git show v0.2
+git tag -v v1.4.2.1 ==> weryfikowania taga jeżeli został podpisany kluczem
+git tag v1.4-lw ==> tworzenie taga lekkiego
+	git describe master ==> poda nazwę najbliższego taga oraz zmiany
+git archive master --prefix='project/' | gzip > `git describe master`.tar.gz ==> pakuje repo
+git archive master --prefix='project/' --format=zip > `git describe master`.zip
+	ETYKIETOWANIE HISTORII
+git log --pretty=oneline
+... acd8413b620716c36a4f449aef8d01cdd0d4f7d1 Initial commit 0.01 ...
+git tag -a v0.0 acd8413
+	GIT PUSH NIE PRZESYLA ETYKIET AUTOMATYCZNIE
+git push origin [tag]
+git push origin --tags ==> przesyła wszystkie tagi
+git describe master ==> generuje wersję zmian w postaci czytelnej +1 co commit
+
+##########ALIASY POLECEN##########
+git config --global alias.co checkout 			|| git config --global alias.br branch
+git config --global alias.unstage 'reset HEAD --' 	|| git config --global alias.last 'log -1 HEAD' ||git config --global alias.visual "!gitk"
+
+
+###########BRANCHE LOKALNE###########
+git branch [branch] ==> tworzy branch ale na nią nie przechodzi
+git checkout -b 	  	==> tworzy branch i przechodzi na nią
+git branch -d test1 	==> usuwa branch jak juz nie jest potrzenba
+git branch -f branch_name commit ==> zmiana commita na który wskazuje branch
+
+
+###########SCALANIE###########
+###########MERGE###########
+git merge test1 ==> jak jestesmy na branchu master to zmiany z test1 wrzuca do master !!!IMPORTANT!!!
+				==> master i test1 będę wskazywać na tą samą migawkę jeżeli na mastrzez nie mylo nic nowego w porównaniu do test1, jeżeli był ostworzy nową migawkę ktora POSIADA 2 RODZICOW CO NIE WYGLADA LADNIE W HISTORII !!!IMPORTANT!!!
+				==> W SKROCIE DODAJE COMMITY Z TEST1 DO MASTER !!!IMPORTANT!!!
+				==> jak byl merge to add i pozniej commit
+	git branch --merged || git branch --no-merged || git branch --merged master ==> listuje branche zmergowane do master
+git merge --no-commit --squash featureB ==> aktualnie jesteśmy na gałęzi np master
+																				==> --squash pobiera wszystkie zmiany z featureB i łączy je w jedną (jeden commit)
+																				==> --no-commit powoduje że nie tworzu się commit i można ręcznie dodać jeszcze jakieś zmiany, następnie trzeba zrobić commita !!!IMPORTANT!!!
+###########cherry-pick###########
+git cherry-pick 2c33a  || git cherry-pick 2c33a2c33a2c33a22 ==> ==> kopiuje commit i tworzy nowy commit w aktualnej gałęzi, który zawiera identyczne zmiany jak wskazany commit !!!IMPORTANT!!!
+	git cherry-pick master || git cherry-pick master~4 master~2
+
+###########rebase###########
+git rebase master 	==> W SKROCIE DODAJE COMMITY Z MASTER DO naszego brancha BB !!!IMPORTANT!!!
+					==> resetuje gałąź BB do master i nakłada zmiany z wcześniejszej wersji gałęzi BB
+					==> po rebase, merge z BB na masterze powinien ustawić migawki na ten sam commit
+					==> TWORZY CZYSTĄ HISTORIĘ LINIOWĄ
+					==> działa jak wielokrotne wykonanie cherry-pick dla każdego nowego commita z mastera
+git rebase --onto master 167a5 ==> przekopiuje commity z aktualniej gałęzi zaczynając od 167a5 i go WYKLUCZAJĄC! do master
+git rebase --onto master server client 	==> client to branch bazujący na server a serwer bazuje na master
+										==> przekopiuje na mastera zmiany z brancha client wykluczajac server
+git rebase [gałąź bazowa] [gałąź tematyczna] ==> podając gałąź tematycznąnie trzeba się na nią przełączać !!!IMPORTANT!!!
+		git rebase master server || git checkout master || git branch -d server
+		git merge server ==> jak wcześniej napisałem REBASE SERVER do MASTER i następnie MERGE MASTER do SERVER j.w. powinno ustawić wskaźniki MASTER oraz SERVER na tą samą rewizję
+!!!Nie zmieniaj bazy rewizji, które wypchnąłeś już do publicznego repozytorium.!!! ==> commity ktore już są wypchniete, po rebase zostanie utworzony nowy commit z Twoimi zmianami ktory to będzie musiał być scalony "ponownie" przez wszystkich i będzie bałągan w historii
+
+##########ZMIANY W HISTORII COMMITÓW REBASE -I##########
+	##Zmiana kilku komentarzy jednocześnie
+	git rebase -i HEAD~3 ==> zmiana bazy 3 ostatnich commitów ==> (HEAD~3 wskazuje na 4 ==> rodzic tych trzech)
+												==> UMOŻLIWIA ZMIANĘ WSZYSTKICH COMMITÓW OD PODANEGO HEAD~3, nie robić po pushu
+				Otrzymamy poniższy output, należe zmienić wybrane pick na edit wtedy będzie możliwość zmiany plików czy komentarz
+					pick f7f3f6d changed my name a bit
+					pick 310154e updated README formatting and added blame
+					[pick->]edit a5f4a0d added cat-file
+				Po każdym zatrzymaniu na wybranym commicie robimy zmiany kodu czy też komentarza i wykonujemy
+					git commit --amend
+					git rebase --continue
+			TERAZ HISTORIA JEST ZMIENIONA A DOKŁADNIEJ 3 OSTATNIE COMMITY...
+	##Zmiana kolejności commitów usuwanie
+					pick f7f3f6d changed my name a bit
+					pick 310154e updated README formatting and added blame
+					pick a5f4a0d added cat-file
+						zmienić np na
+					pick 310154e updated README formatting and added blame
+					pick f7f3f6d changed my name a bit
+	##SQUASH Łączenie commitów
+					pick f7f3f6d changed my name a bit
+					squash 310154e updated README formatting and added blame
+					squash a5f4a0d added cat-file
+						na koniec poprosi o jeden wspólne komentarz ==> domyślnie złożony z 3 powyższych
+	##Rozdzielanie commitów
+					pick f7f3f6d changed my name a bit
+					edit 310154e updated README formatting and added blame
+					pick a5f4a0d added cat-file
+			Teraz jak wejdziemy w edycję środkowego komentarza robimy
+				git reset HEAD^ ==> cofnie zmiany z przechowalni i zrobi jako zmodyfikowane
+				git add README
+				git commit -m 'updated README formatting'
+				git add lib/simplegit.rb
+				git commit -m 'added blame'
+				git rebase --continue
+			efekt
+				git log -4 --pretty=format:"%h %s"
+				1c002dd added cat-file
+				9b29157 added blame
+				35cfb2b updated README formatting
+				f3cc40e changed my name a bit
+	####Zmiana dużej liczby commitów w sposób automatyczny - lepiej nie dotykać
+				git filter-branch --tree-filter 'rm -f passwords.txt' HEAD
+				Rewrite 6b9b3cf04e7c5686a9cb838c3f36a8cb6a0fc2bd (21/21)
+				Ref 'refs/heads/master' was rewritten
+					--tree-filter  ==> umożliwia wykonanie jakiejś komendy po każdej zmianie i następnie ponownie zapisuje wynik
+												 ==>W tym przypadku, usuwasz plik passwords.txt z każdej migawki
+				git filter-branch --tree-filter "find * -type f -name '*~' -delete" HEAD
+					!!! Aby uruchomić filter-branch an wszystkich gałęziach, dodajesz opcję --all
+			## Wskazywanie podkatalogu jako katalogu głównego
+				git filter-branch --subdirectory-filter trunk HEAD
+
+
+
+##########BRANCHE ZDALNIE###########
+	git checkout -b branch2
+git push origin branch2 ==> wrzuca nowoutworzony branch na zdalny serwer -> == refs/heads/branch2:refs/heads/branch2
+git push https://github.com/pawel33317/learnGit.git branch4:branch3 ==> wrzuca zmiany z lokalnego brancha branch4 na zdalny branch branch3
+	git checkout -b serverfix origin/serverfix ==> stworzenie lokalnej gałęzi bazującej na zdalnej
+git checkout -b [gałąź] [nazwa zdalnego repozytorium]/[gałąź] == git checkout --track [nazwa zdalnego repozytorium]/[gałąź]
+git push origin :branch2 ==> USUWA ZDALNY BRANCH !!!IMPORTANT!!!
+
+
+##########GIT PROTOKOŁY###########
+	lokalny || SSH || git || http
+lokalny => zdalne repo to lokalny katalog na dysku na tym samym kompie lub jakieś NTFS
+	git clone /opt/git/project.git
+git clone file:///opt/git/project.git ==> z file:// git użyje protokołów sieciowych więc spadnie wydajność ale pobiera mniej śmieci z repo
+git remote add local_proj /opt/git/project.git
+	PROTOKOLY GIT I HTTP są głównie tylko do odczytu
+git clone ssh://user@server/project.git == git clone user@server:project.git
+	PROTOKÓŁ GIT nie ma uwierzytelniania i szufrowania :/ nasłuchuje na porcie 9418, jest szybki
+	 git daemon --reuseaddr --base-path=/opt/git/ /opt/git/ ==> --reuseaddr  pozwala na restart, --base-path user nie musi podawać pełne j ścieżki, trzeba otworzyć port 9418, Można też edytować plik daemona /etc/event.d/local-git-daemon
+Jeżeli już się stosuje to do odczytu a do zapisu SSH
+	PROTOKOL HTTP/S umiścić repo w katalogu www i ustawić hook post-update
+git clone http://example.com/gitproject.git
+
+
+##########ODPALENIE GITA NA SERWERZE###########
+###TWORZENIE REPO###
+	git clone --bare my_project xxx.git ==> tworzy całe nowe repo "xxx" na bazie my_project
+prawie to samo co "cp -Rf my_project/.git my_project.git"
+git --bare init ==> nowe puste repo bez ścieżki roboczej
+git clone == git init + git fetch
+###WRZUCANIE REPO NA SERWER ZDALNY###
+	scp -r my_project.git user@git.example.com:/opt/git
+teraz każdy może je klonować
+git clone user@git.example.com:/opt/git/my_project.git
+git init --bare --shared ==> dodanie uprawnień do zapisu dla grupy, odpalić na serwerze
+	Żeby userzy mieli dostęp muszą mieć jednąz wybranych opcji
+* Każdy własne konto SSH
+* Każdy loguje się na kongo git i podaje wcześniej swój klucz publiczny
+* SSH skonfigurowane pod LDAP
+	Generowanie kluczy jak nie ma w .ssh poleceniem ssh-keygen
+Konfiguracja serwera
+###NA SERWERZE###
+	sudo adduser git || su git || cd || mkdir .ssh
+	cat /tmp/id_rsa.john.pub >> ~/.ssh/authorized_keys ==> dla każdego usera
+	cd /opt/git || mkdir project.git || cd project.git || git --bare init
+###U USERA###
+	cd myproject || git init || git add . || git commit -m 'initial commit'
+	git remote add origin git@gitserver:/opt/git/project.git || git push origin master
+	OD TERAZ WSZYSCY MOGA KLONOWAC PPUSHOWAC PULOWAC ...
+	###MOZNA TEZ UZYTKOWNIKOWI ZABLOKOWAC DOSTEP DO MOKEND BASHA###
+	sudo vim /etc/passwd
+	git:x:1000:1000::/home/git:/bin/sh ==> ZMIENIC NA git:x:1000:1000::/home/git:/usr/bin/git-shell
+	TERAZ USER MOZE UZYWAC SSH TYLKO DO GITA
+
+
+##########ZARZĄDZANIE GITEM###########
+###UDOSTEPNIANIE PRZEZ SERWER HTTP###
+	cd project.git
+	mv hooks/post-update.sample hooks/post-update || chmod a+x hooks/post-update
+	ZAWARTOSC PLIKU ... exec git-update-server-info ==> oznacza że po pushu przez SSH git odświeży pliki dla http
+	Stworzyć nowy VHOST dla apacha z katalogiem repo oraz ==> chgrp -R www-data /opt/git
+	git clone http://git.gitserver/project.git
+###GIT WEB###
+	git instaweb ==> jak jest lighttpd || git instaweb --httpd=webrick ==> udostepnia interfejs webowy
+	ŻEBY BYL NA STALE ==> instalacja przez apt gitweb
+###GITOSIS###
+	Służy do zarządzania użytkownikami gita/ssh zarządzania plikiem authorized_keys
+###GITOLINE###
+	Umożliwia zarządzanie repozytoriami, dostępem nawet dla poszczególnych gałęzi
+
+
+
+##########PRZECHOWALNIA##########
+git stash ==> dodaje zmiany do przechowalni więc jesteśmy na czystym branchu
+git stash list ==> lista zmian w przechowalni
+git stash apply ==> nałożenie zmian ostatnich z przechowalni, ale pliki do commita nie są teraz dodane
+git stash apply --index ==> nałożenie zmian ostatnich z przechowalni, ale pliki do commita są teraz dodane jak były
+git stash apply stash@{2} ==> nałożenie starszych zmian
+	MOŻNA NAKŁADAĆ NA INNE GAŁĘZIE CZY TEŻ NA ZMIENIONE PLIKI
+git stash drop ==> WYWALA ZMIANĘ Z PRZECHOWALNI
+git stash pop ==> nakłada ostatnie zmiany ze schowka i jasuje je w schowku
+git stash show -p | git apply -R ==> cofnięcie nałożonych zmian ze schowka
+git stash show -p stash@{0} | git apply -R ==> cofnięcie nałożonych zmian ze schowka
+	git config --global alias.stash-unapply '!git stash show -p | git apply -R' ==> alias żeby zrobić stash unapply
+git stash branch [branch] ==> tworzy branch na bazie showka i wywala rzeczy ze schowka
+
+
+
+##########GIT SUBMODULY##########
+git submodule add https://github.com/wel33317/students-maps-apps-.g studentApp
+		==> stworzy nowy moduł w katalogu studentApp
+		==> w git status pojawi się plik .gitmodules przechowujący mapowania na oryginalny adres url
+		==> moduł jest widziany jako niezależny projekt
+		==> git go nie śledzi
+				git diff --cached studentApp
+					new file mode 160000
+	aby zmiany w sub module byłe śledzone trzeba wejść w submoduł z zrobić na nim commita, nastepnie
+	dodać modules w nadrzędnym projekcie i też zcommitować
+Zauważ tryb 160000 dla wpisu dotyczącego rack. Jest to specjalny tryb w Gitcie, który oznacza tyle, że zapisujesz commmit jako wpis dotyczący katalogu, a nie podkatalogu czy pliku.
+	###Klonowanie projektu z modułami zależnymi
+git clone git://github.com/schacon/myproject.git ==> nie zawiera submodułów trzeba zrobić dwie poniższe
+git submodule init ==> inicjalizacja pliku konfiguracyjnego
+git submodule update ==> aby pobrać wszystkie dane
+git submodule update ==> TRZEBA WYKONAC 2 RAZY BO GUBI COMMITY W SUBMODUŁACH
+PONIŻSZE oznacza że ktoś wprowadził lokalnie zmiany w module ale nie wypchnął ich na serwer publiczny
+		git submodule update
+		fatal: reference isn’t a tree: 6c5e70b984a60b3cecd395edd5b48a7575bf58e0
+		Unable to checkout '6c5e70b984a60b3cecd395edd5ba7575bf58e0' in submodule path 'rack'
+!!!jeżeli zrobisz po raz pierwszy submodule update, wprowadzisz zmiany w tym module bez tworzenia nowej gałęzi do tego, i potem ponownie uruchomisz git submodule update z poziomu projektu głównego bez commitowania ich, Git nadpisze te zmiany bez żadnej informacji zwrotnej Technicznie rzecz biorąc nie stracisz swoich zmian, ale nie będziesz miał gałęzi która wskazuje na nie, będzie więc trudno je odzyskać. !!! Gdy stworzysz nową gałąź, dodanie w niej moduł, a następnie przełączysz się z powrotem na gałąź która nie zawiera tego modułu, będziesz miał nadal katalog w którym jest moduł, ale nie będzie on śledzonyAby uniknąć tego problemu, stwórz gałąź gdy pracujesz w katalogu modułu za pomocą git checkout -b work lub podobnej komendy
+!!! Gdy stworzysz nową gałąź, dodanie w niej moduł, a następnie przełączysz się z powrotem na gałąź która nie zawiera tego modułu, będziesz miał nadal katalog w którym jest moduł, ale nie będzie on śledzony
+	Jeżeli chcemy przenieść jakieś pliki z katalogi i stworzyć moduł o tej nazwie rm -Rf rack/ nie zadziała
+	trzeba zrobić poniższe
+	 git rm -r rack
+	 git submodule add git@github.com:schacon/rack.git rack
+	 		po takiej akcji zmiana gzłęzi nie zadziała ==>  git checkout master ==> trzeba przenieść katalogi
+				mv rack /tmp/
+				git checkout master
+			po powrocie na poprzednią branch przenieść katalog ponownie
+
+
+
+##########ZAMIAST SUBPROJEKTU !!! Włączanie innych projektów METODA TREE##########
+ Kiedy Git ma włączyć zmiany, najpierw sprawdza jakie zmiany ma włączyć, a następnie wybiera najlepszą strategię do wykonania tego zadania
+Jeżeli łączysz dwie gałęzie, Git użyje strategii rekurencyjnej.
+Jeżeli łączysz więcej niż dwie gałęzie, Git wybierze strategię ośmiornicy
+!!!Strategię subtree można używać z podprojektami
+!!!"subtree" jest wtedy, gdy masz dwa projekty w których jeden mapuje się do podkatalogu w drugim i na odwrót
+	==> czyli inny projekt jako jedynie katalog w aktualnym
+
+git remote add kursWalutProj https://github.com/pawel33317/Kursy-walut-C-XAML-WinRT.git
+git fetch kursWalutProj
+git checkout -b kursWalutProj_branch kursWalutProj/master ==> tworzymy branch na bazie subprojektu
+ls na masterze i ls na kursWalutProj_branch to różne projekty
+	Teraz trzeba załadować subprojekt kursWalutProj do mastera w projekcie głównym learnGit
+		git read-tree odczytuje całedrzewo projektu z jednej gałęzi i włącza je do obecnego katalogu i przechowalni
+git checkout master ==> i przechodzimy do projektu learnGit
+git read-tree --prefix=kursWalut/ -u kursWalutProj_branch
+		teraz mamy katalog kursWalut z zawartością brancha kursWalutProj_branch czyli projektu kursWalutProj
+		==> wygląda to jakby pliki poprostu były tam przekopiowane
+ git commit -m 'new project kursyWalutProj added'
+ 		Teraz projekt kursyWalut będzie zmieniony i chcę pobrać nową werję
+git checkout kursWalutProj_branch ==>  vi README.md -->  git add -u -->  git commit -m 'added spam commit'
+git checkout master
+git merge -s subtree ==> ale lepiej poniższą bo tą git połączy historię zmian co jest nieoczekiwane
+	!!!Aby pobrać zmiany i samemu wypełnił treść komentarza
+git merge --squash -s subtree --no-commit kursWalutProj_branch ==> jak nie działa to poniższą ==> może nie działać bo to jest bug w gicie
+git merge --allow-unrelated-histories --squash -s subtree --no-commit kursWalutProj_branch
+	git diff-tree -p kursWalutProj_branch ==> !!! Różnice
+	git diff-tree -p kursWalutProj/master ==> różnica z serwerem
+
+
+
+##########DOstosowywanie gita##########
+Git Attributes 	==> można zastosować tylko dla wybranego katalogu
+								==> można ustalać strategie mergowania
+								==> oznaczać pliki jako binarne
+Git Hooks				==> umożliwia zrobienie triggera czyli wyzwolenie czegoś przy jakiejś akcji np skryptu
+								==> hooki są przechowywane w .git.hooks ==> jest tam wiele exmapli
+								==> aby dodać skrypt należy go umieścić w katalogu hooks i nachać +x uprawnienia
+									==> pre-commit hook uruchamia się przed commitem
+									==> prepare-commit-msg, ommit-msg, post-commit
+									==> server site hooks: pre-receive ==> before push from client, post-receive
+
+
+
+##########MECHANIZMY WEWNĘTRZNE##########
+#####PODSTAWOWE OBIEKTY GITA BEZ NAZW #####
+	Git to baza danych ma w sobie dane i przypisny do nich klucz który umożliwia dobranie się do danych
+		po git init w kataloch ".git/objects" są 2 puste katalogi "pack" i "info"   find .git/objects -type f
+	zapisujemy dane do brzy gita
+		echo 'test content' | git hash-object -w --stdin ==> -w nakazuje zapisanie obiektu ==> bez -stdin będzie chciał ściezkę do pliku ==> output: b2002ff8e8fee6e4682535f4db407731ab2fcbbb
+	teraz git zapisał dane do bazy
+		find .git/objects -type f ==> mo</pjhyett>żna dodać | grep hash_obiektu (b2002ff8e8fee6e4682535f4db407731ab2fcbbb)
+	odczytanie zawartości z bazy gota na podstawie klucza
+		git cat-file -p b2002ff8e8fee6e4682535f4db407731ab2fcbbb
+	Dodanie pliku do bazy
+		cd mechanizmyWew/ ==>  git init
+		find .git/objects ==> .git/objects || .git/objects/info || .git/objects/pack
+	  echo 'v1' > test.txt
+		git hash-object -w test.txt
+		find .git/objects  -type f ==> OUTPUT: .git/objects/62/6799f0f85326a8c1fc522db584e86cdfccd51f
+		echo 'v2' > test.txt
+		git hash-object -w test.txt
+	  find .git/objects -type f ==> OUTPUT:
+			==>.git/objects/62/6799f0f85326a8c1fc522db584e86cdfccd51f
+			==>.git/objects/8c/1384d825dbbe41309b7dc18ee7991a9085c46e
+	Przywrócenie danej wersji pliku z bazy
+	  git cat-file -p 626799f0f85326a8c1fc522db584e86cdfccd51f
+	  git cat-file -p 626799f0f85326a8c1fc522db584e86cdfccd51f > test.txt
+	Obiekty takie są typu blob i nie posiadają nazwy
+		git cat-file -t 626799f0f85326a8c1fc522db584e86cdfccd51f ==> OUTPUT: blob
+#####OBIEKTY DRZEW#####
+	TREE - drzewa ==> odpowiadają strukturze katalogów np w systemie unix
+Odczytanie obiektu drzewa ostatniego commita
+		git cat-file -p master^{tree}
+	100644 blob 97e59753bc7723caa521c4e9dbd4817c45aeb733    .gitmodules
+	100644 blob ad9c3c1d67677d8fb0a6206e41c9aeb3dfa4b7d1    READ.me
+	040000 tree 6f44f62b014e9602fbca7d48ec09d03d465d7bd4    kursWalut
+	100644 blob a8e0d0e87bfb6de7b3f2dacf07f568cafbe5fd98    lalala
+	100644 blob 37dc28384b6193526ad3c57d2864764fa627de20    plik2
+	160000 commit 1f8b94ee7ea3876d0e322bd440ea2a9215eb72da  studentApp
+Git tworzy tree poprzez pobranie stanu przechowalni lub indexu
+	Tak więc najpierw trzeba ustawić index poprzez dodanie do przechowalni
+Tworzymy TREE
+  mkdir tree ==> git init ==> echo 'aaa1' > test.txt
+	git hash-object -w test.txt ==> OUTPUT: d8da8010ae347cd4c960a8ede8306e5c2d4e76da
+	git update-index --add --cacheinfo 100644 d8da8010ae347cd4c960a8ede8306e5c2d4e76da test.txt
+	git write-tree ==> OUTPUT: 78bdd7498702e984e7e6b918a2192c4a0c2724d7
+	git cat-file -p 78bdd7498702e984e7e6b918a2192c4a0c2724d7 ==> OUTPUT 100644 blob d8da8010ae347cd4c960a8ede8306e5c2d4e76da    test.txt
+	git cat-file -t 78bdd7498702e984e7e6b918a2192c4a0c2724d7 ==> OUTPUT: tree
+DODANIE DO PRZECHOWALNII TREE ==> czyli add ==> następnie należy zrobić commit
+	git read-tree 78bdd7498702e984e7e6b918a2192c4a0c2724d7
+	git read-tree --prefix=bak hashhhhhhhhhhhhhh ==> to co wyżej tylko w katalogu bak
+#####OBIEKTY COMMIT#####
+	PRZETRZYMUJĄ migawki śledzonego projektu sumy SHA, informacje kto zrobił i czemu
+Robimy obiekt commita
+	echo 'first commit' | git commit-tree 78bdd7498702e ==> OUTPUT: 07878523daebfe593fa458b619caca48f2246655
+Sprawdzenie zawartości commita
+	git cat-file -p 07878523daebfe593fa458b619caca48f2246655
+Wskazije na najnowszy obiekt tree dla migawki w momencie tworzenia pobiera info o autorze, czas i treść komentarza
+						  nowe commity bazujące na poprzednich
+							echo 'second commit' | git commit-tree 0155eb -p 07878523daebfe59
+											cac0cab538b970a37ea1e769cbbde608743bc96d
+						  echo 'third commit'  | git commit-tree 3c4e9c -p cac0cab538b
+											1a410efbd13591db07496601ebc7a059dd55cfe9
+Sprawdzenie zawartości commita
+	git log --stat 07878523daebfe593fa458b619caca48f2246655
+	commit 07878523daebfe593fa458b619caca48f2246655
+	Author: Pawel Czubak <pawel33317@gmail.com>
+	Date:   Wed Feb 21 20:37:12 2018 +0100
+	   first commit
+	test.txt | 1 +
+	1 file changed, 1 insertion(+)
+
+
+
+##########Referencje w Git##########
+Git przechowuje referencje w .git/refs ==> find .git/refs -type f
+Referencja jest to alias np "master" który wskazuje na jakiś commit, więc w pliku .git/refs znajduje się plik o nazwie master z zawartością hash commita na który wskazuje
+Dodanie referencji
+  echo "65b1a242f9840679ebddbf5af8294ee78a199740" > .git/refs/heads/branchRefs
+	git branch ==> OUTPUT: branchRefs
+	git log --pretty=oneline  branchRefs
+Zmiana referencji na którą wskazuje gałąź
+	git update-ref refs/heads/master 1a410efbd13591db07496601ebc7a059dd55cfe9
+Stworzenie gałęzi
+	git update-ref refs/heads/test xcxcxcHash
+git branch (nazwagałęzi) ==> to to samo co update-ref w celu dodania SHA ostatniego commita na aktualnej gałęzi do referencji nowej gałęzi
+HEAD nie zawiera SHA ostatniego commita a referencję na ostatni commit
+	cat .git/HEAD
+	ref: refs/heads/master
+	git checkout branch2 ==> cat .git/HEAD ==> ref: refs/heads/branch2
+Gdy robimy commit stworzony zostanie obiekt commita określając rodzica jako SHA z pliku HEAD
+Odczytanie HEAD
+	git symbolic-ref HEAD
+Modyfikacja HEAD to samo co checkout na inny branch
+	git symbolic-ref HEAD refs/heads/master
+#####Obiekty Tag#####
+Jedyna różnica w stosunku do commita że nie wskazuje jak commit na obiekt tree a na obiekt commit
+Stworzenie tega lekkiego
+	git update-ref refs/tags/v1.0 cac0cab538b970a37ea1e769cbbde608743bc96d
+Stworzenie taga opisanego ==> git stworzy obiekt tag następnie zapisze referencję wskazującą na niego zamiast na commit
+	git tag -a v1.1 1a410efbd13591db07496601ebc7a059dd55cfe9 -m 'test tag'
+	cat .git/refs/tags/v1.1
+			9585191f37f7b0fb9444f35a9bf50de191beadc2
+	git cat-file -p 9585191f37f7b0fb9444f35a9bf50de191beadc2
+			object 1a410efbd13591db07496601ebc7a059dd55cfe9 ==> COMMIT KTÓRY JEST ZATAGOWANT
+			type commit
+			tag v1.1
+			tagger Scott Chacon <schacon@gmail.com> Sat May 23 16:48:58 2009 -0700
+			test tag
+#####REFERENCJE DO ZDALNYCH REPO#####
+Git zapisuje SHA ostatnio wypchniętej zmiany dla każdej gałęzi
+	git remote add origin git@github.com:schacon/simplegit-progit.git
+	git push origin master
+Teraz można zobaczyć w którym miejscu była gałąź jak zmiany były wypychane
+	cat .git/refs/remotes/origin/master
+			ca82a6dff817ec66f44342007202690a93763949
+#####Spakowane pliki#####
+ du -b .git/objects/6f/44f62b014e9602fbca7d48ec09d03d465d7bd4 ==> rozmiar pliku podaje się hash bloba, commita itp
+Git czasami pakuje obiekty w pojedyńczy plik binarny packfile --> głównie jeżeli jest dużo luźnych obiektów
+często robi to po pushu lub gc
+git gc
+				Counting objects: 149, done.
+				Delta compression using up to 4 threads.
+				Compressing objects: 100% (126/126), done.
+				Writing objects: 100% (149/149), done.
+				Total 149 (delta 36), reused 3 (delta 0)
+większość obiektów zginęła po git gc ==> sprawdzenie: find .git/objects -type f
+	zostają głównie obiekty nie powiązane z żadnym commitem OUTPUT:
+			.git/objects/b2/002ff8e8fee6e4682535f4db407731ab2fcbbb
+			.git/objects/info/packs
+			.git/objects/pack/pack-85603f23f799c22a69675a37f2ba71a4fb656b4a.idx
+			.git/objects/pack/pack-85603f23f799c22a69675a37f2ba71a4fb656b4a.pack
+Gdy git pakuje pliki szuka podobnych pod względem nazwy lub rozmiaru i przechowuje difa
+Sprawdzenie tego co zostało spakowane
+  git verify-pack -v .git/objects/pack/pack-85603f23f799c22a69675a37f2ba71a4fb656b4a.idx
+#####git refspec#####
+git remote add origin git@github.com:schacon/simplegit-progit.git
+cat .git/config
+			[remote "origin"]
+			       url = git@github.com:schacon/simplegit-progit.git
+			       fetch = +refs/heads/*:refs/remotes/origin/*
+Refspec składa się z
+	+<src_path>:<dst_path>+
+	src ==> referencja na zewnętrznym serwerze
+	dst ==> miejsce w którym referencje będą zapisywane lokalnie
+	+   ==> wsazuje gitowi aby wykonywał aktualizacje nawet gdy ta referencja nie jest fast forward
+Przy "git remote add" git pobiera wszystkie referencje z "refs/heads/" i zapisuje je do "refs/remotes/origin/"
+Poniższe komendy są równoważne
+	git log origin/master
+	git log remotes/origin/master
+	git log refs/remotes/origin/master
+Aby git pobierał za każdym razem (git fetch) tylko master poniższe:
+	fetch = +refs/heads/master:refs/remotes/origin/master
+Aby pobrać master z remote do origin/mymaster:
+	git fetch origin master:refs/remotes/origin/mymaster
+Pobranie kilku gałęzi:
+	git fetch origin master:refs/remotes/origin/mymaster topic:refs/remotes/origin/topic
+Z przestrzeniami nazw
+		[remote "origin"]
+       url = git@github.com:schacon/simplegit-progit.git
+       fetch = +refs/heads/master:refs/remotes/origin/master
+       fetch = +refs/heads/qa/*:refs/remotes/origin/qa/*
+	Aby pobrać gałąż z przestrzeni nazw musi tam być więc inny zespół powinien jhą tam wrzucić
+				git push origin master:refs/heads/qa/master
+			Lub automatycznie:
+				[remote "origin"]
+			       url = git@github.com:schacon/simplegit-progit.git
+			       fetch = +refs/heads/*:refs/remotes/origin/*
+			       push = refs/heads/master:refs/heads/qa/master
+Usuwanie referencji ze zdalnego serwera
+	git push origin :topic
+
+
+###########Konserwacja i odzyskiwanie##########
+git gc - garbage collector łączy lużne obiekty w packfile, usuwa obiekty do których nie odwołuje się żaden commit
+	żeby coś zrobiłą musi być powyżej 7000 luźnych obiektów lun 50 packfile można zmienić te limity
+		gc.auto oraz gc.autopacklimit
+ODZYSKIWANIE DANYCH PO HARD RESET / po usunięciu gałęzi
+		git log --pretty=oneline
+		resetujemy branch to jakiegoś commita git reset --hard 1a410efbd13591db07496601ebc7a059dd55cfe9
+		git log --pretty=oneline ==> straciliśmy jakiś commit
+	Teraz szukamy najnowszej sumy SHA a potem trzeba dodać gałąż wskazującą na nią
+		git reflog ==> Za każdym razem gdy wykonujesz commit lub zmieniasz gałęzie, reflog jest aktualizowany
+			reflog jest też aktualizowany po wykonaniu komendy: git update-ref
+		git reflog
+						1a410ef HEAD@{0}: 1a410efbd13591db07496601ebc7a059dd55cfe9: updating HEAD
+						ab1afef HEAD@{1}: ab1afef80fac8e34258ff41fc1b867c702daa24b: updating HEAD
+		jest trochę mało outputu i nie wiagomo który commit to który więc wykonujemy:
+		git log -g
+					commit 1a410efbd135...
+					third commit
+					commit ab1afef80fac8... ==> utracony commit
+					 modified repo a bit
+		Tworzymy branch wskazujący na dany commit
+			git branch nowyBranch  ab1afef
+SYTUACJA JAK NIE MA DANYCH W REFLOGU
+	Tracimy je następująco
+		git branch -D recover-branch
+		rm -Rf .git/logs/ ==> tu są przechowywane dane z refloga
+	git fsck --full ==> sprawdza zawartość bazy pod względem integralności danych
+		z opcją --full pokaże wszystkie obiekty do których nie da się dotrzeć przez inne
+							git fsck --full
+						dangling blob d670460b4b4aece5915caf5c68d12f560a9fe3e4
+						dangling commit ab1afef80fac8e34258ff41fc1b867c702daa24b
+						dangling tree aea790b9a58f6cf6f2804eeac9f0abbe9631e4c9
+						dangling blob 7108f7ecb345ee9d0084193f147cdad4d2998293
+USUWANIE obiektow
+	git clone pobiera całą historię projektu włącznie z każdą wersją wszystkich plików
+		więc jeżeli dodamy jakiś duży plik i później go skasujemy git i tak będzie go pobierał
+	Technika ta działa destrukcyjnie na historię, można wykonać zaraz po zaimportowaniu
+		Dodajemy duży plik do repozytorium
+			curl http://kernel.org/pub/software/scm/git/git-1.6.3.1.tar.bz2 > git.tbz2 git add git.tbz2
+			git commit -am 'added git tarball'
+		Teraz go kasujemy bo to była pomyłka
+			git rm git.tbz2
+		Sprawdzamy jak dużo miejsca jest zajmowane
+			git gc
+			git count-objects -v
+				...size-pack: 2016... ==> wielkość packgule w KB, więc mamy 2 zbędne mega bo wcześniej było tylko 2kb
+						więc usunięcie pliku git rm nie wywaliło tego z historii
+		Sprawdzamy jaki plik zajmuje tak dużo
+			git verify-pack -v .git/objects/pack/pack-3f8c0...bb.idx | sort -k 3 -n | tail -3
+						e3f094f522629ae358806b17daf78246c27c007b blob   1486 734 4667
+						05408d195263d853f09dca71d55116663690c27c blob   12908 3478 1189
+						7a9eb2fba2b1811321254ac360970fc169ba2330 blob   2056716 2056872 5401
+			git rev-list --objects --all | grep 7a9eb2fb
+						7a9eb2fba2b1811321254ac360970fc169ba2330 git.tbz2
+			Sprawdzamy jakie commity modyfikowały ten plik
+					git log --pretty=oneline --branches -- git.tbz2
+							da3f30d019005479c99eb4c3406225613985a1db oops - removed large tarball
+							6df764092f3e7c8f5f94cbe08ee5cf42e92a0289 added git tarball
+			Trzeba usunąć plik ze wszystkich rewizji więc trzeba nadpisać wszystkie commity
+			git filter-branch --index-filter \ 'git rm --cached --ignore-unmatch git.tbz2' -- 6df7640^..
+					Rewrite 6df764092f3e7c8f5f94cbe08ee5cf42e92a0289 (1/2)rm 'git.tbz2'
+					Rewrite da3f30d019005479c99eb4c3406225613985a1db (2/2)
+					Ref 'refs/heads/master' was rewritten
+							opcja --index-filter w przeciwieństwie do opcji --tree-filter która modyfikuje pobrane pliki na dysku
+								--index-filter modyfikuje przechowalnię lub index za każdym razem
+							git rm --cached -  usuwa plik z indeksu, nie z dysku
+							--ignore-unmatch  ==> nie pokazuje błędu gdy ścieżka nie istnieje
+							flter-branch ==> aby przeszukana została historia począwszy od 6df7640
+			Historia już nie zawiera zmian ale reflog i nowe referencje które powstały przy uruchomieniu filter-branch nadal mają, więc trzeba usunąć wszystko co wskazuje na te commity
+				rm -Rf .git/refs/original
+				rm -Rf .git/logs/
+			git count-objects -v ==> jest ok ...size-pack: 7... duży obiekt nadal znajduje się w repozytorium, nie został więc całkowicie usunięty; jednak co najważniejsze, nie będzie już przesyłany podczas wykonywania push lub klonowania
+			git prune --expire aby usunąć całkowicie
+
+
+##########INNE##########
+GIT REVERT
+	==> generuje zmiany przeciwne do zmian podanych w commicie
+	==> w skrócie robi commit który cofa inny commit
+		git revert aa26ca2b5b69e883bb7a409a9a157066dca9dcd4
+		git log
+						commit 9e639a5fa70c777516df531aff0d5e56d5d268c8 (HEAD -> master)
+						...Revert "second commit"...This reverts commit aa26ca2b5b69e883bb7a409a9a157066dca9dcd4.
+						commit aa26ca2b5b69e883bb7a409a9a157066dca9dcd4....
+	 git revert -n nie tworzy commita aa26ca2b5b69e883bb7a409a9a157066dca9dcd4
+GIT LS-INDEX
+	wyświatla pliki w gicie ma dużo parametrów
+GIT FSCK
+	weryfikuje połączenia obiektów i ich ważnośc w bazie
+GIT PRUBE
+	często wywoływany przez git gc, usuwa nieosiągalne obiekty
+GIT RERERE
+	Prze branchy który był nie mergowany od dawna i są ciągłe konflikty cotam pomaga poprzez nagrywanie wyników automergy
+GIT MERGE-BASE branch branch2
+	znajduje najlepszego wspólnego przodka do merga
+GIT DAEMON
+	odpala prosty serwer gita
+GIT VAR -L
+	printuje lokalne zmienne
+GIT STAGE
+	synonim do git add
+GIT SHOW-INDEX
+	pokazuje index spakowanego archiwum. Czyta plik .idx stworzony przez git pack-objectsi wyświetla zawartość
+GIT WHATCHANGED
+	pokazuje logi z różnicami poszczególnych commitów
