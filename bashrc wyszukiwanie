@@ -1,0 +1,18 @@
+RED='\033[01;31m'
+searchInFiles(){
+    if [ $# -eq 0 ]; then
+        echo -e "${RED}not enough parameters"
+    elif [ $# -eq 1 ]; then
+        grep --include *.cpp --include *.c -r -i -e "${1}" -n
+    elif [ $# -eq 2 ]; then
+        if [ "$1" == "-h" ]; then
+            grep --include *.hpp --include *.h -r -i -e "${2}" -n
+        else
+            echo -e "${RED}incorrect first parameter"
+        fi
+        
+    else
+        echo -e "${RED}too much parameters"
+    fi
+}
+alias s='searchInFiles'
